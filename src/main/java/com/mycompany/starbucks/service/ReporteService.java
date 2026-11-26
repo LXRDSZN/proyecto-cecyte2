@@ -4,6 +4,7 @@ import com.mycompany.starbucks.dao.ReporteDAO;
 import com.mycompany.starbucks.dao.ReporteDAO.Datos;
 import com.mycompany.starbucks.dao.ReporteDAO.Filtros;
 import com.mycompany.starbucks.model.Usuario;
+import com.mycompany.starbucks.model.Rol;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -17,10 +18,7 @@ public class ReporteService {
     private final ReporteDAO dao = new ReporteDAO();
 
     public Datos consultar(Usuario usuario, Filtros filtros) throws SQLException {
-        if (usuario == null || !"ACTIVO".equals(usuario.getEstado())
-                || !("ADMINISTRADOR".equals(usuario.getRol()) || "REVISOR".equals(usuario.getRol()))) {
-            throw new IllegalArgumentException("Solo administradores y revisores pueden consultar reportes.");
-        }
+        OperacionBD.exigirRol(usuario, Rol.ADMINISTRADOR, Rol.REVISOR);
         return dao.consultar(filtros);
     }
 

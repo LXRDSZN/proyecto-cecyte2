@@ -5,6 +5,7 @@ import com.mycompany.starbucks.dao.PrenominaDAO;
 import com.mycompany.starbucks.dao.PrenominaDAO.Regla;
 import com.mycompany.starbucks.dao.PrenominaDAO.Resultado;
 import com.mycompany.starbucks.model.TipoIncidencia;
+import com.mycompany.starbucks.model.Rol;
 import com.mycompany.starbucks.model.Usuario;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -46,11 +47,11 @@ public class PrenominaService {
 
     public void autorizarRegla(Usuario actor, int periodo, TipoIncidencia tipo, boolean descuenta, String referencia)
             throws SQLException {
-        exigirRol(actor, "ADMINISTRADOR");
         if (tipo == null || referencia == null || referencia.isBlank()) {
             throw new IllegalArgumentException("Selecciona el tipo e indica la referencia a la aprobación.");
         }
-        transaccion(conn -> {
+        OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR);
             exigirCaptura(dao.bloquearPeriodo(conn, periodo));
             dao.guardarRegla(conn, periodo, tipo, new Regla(descuenta, referencia.strip()), actor.getId());
             dao.auditar(conn, actor.getId(), periodo, "AUTORIZAR_REGLA",
@@ -60,8 +61,8 @@ public class PrenominaService {
     }
 
     public List<Resultado> calcular(Usuario actor, int periodo) throws SQLException {
-        exigirRol(actor, "ADMINISTRADOR");
-        return transaccion(conn -> {
+        return OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR);
             var quincena = dao.bloquearPeriodo(conn, periodo);
             exigirCaptura(quincena);
             var resultados = prepararResultados(conn, periodo, quincena);
@@ -72,8 +73,8 @@ public class PrenominaService {
     }
 
     public void enviarARevision(Usuario actor, int periodo) throws SQLException {
-        exigirRol(actor, "ADMINISTRADOR");
-        transaccion(conn -> {
+        OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR);
             var quincena = dao.bloquearPeriodo(conn, periodo);
             exigirCaptura(quincena);
             comprobarResultados(conn, periodo, quincena, "PENDIENTE");
@@ -83,8 +84,8 @@ public class PrenominaService {
     }
 
     public void revisar(Usuario actor, int periodo, String observaciones) throws SQLException {
-        exigirRevisor(actor);
-        transaccion(conn -> {
+        OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR, Rol.REVISOR);
             var quincena = dao.bloquearPeriodo(conn, periodo);
             exigirRevision(quincena);
             comprobarResultados(conn, periodo, quincena, "REVISION");
@@ -94,8 +95,8 @@ public class PrenominaService {
     }
 
     public void autorizar(Usuario actor, int periodo) throws SQLException {
-        exigirRevisor(actor);
-        transaccion(conn -> {
+        OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR, Rol.REVISOR);
             var quincena = dao.bloquearPeriodo(conn, periodo);
             exigirRevision(quincena);
             comprobarResultados(conn, periodo, quincena, "REVISADO");
@@ -105,8 +106,8 @@ public class PrenominaService {
     }
 
     public void devolverACaptura(Usuario actor, int periodo, String observaciones) throws SQLException {
-        exigirRevisor(actor);
-        transaccion(conn -> {
+        OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR, Rol.REVISOR);
             exigirRevision(dao.bloquearPeriodo(conn, periodo));
             cambiarEstado(conn, periodo, actor, "CAPTURA", validarObservaciones(observaciones));
             return null;
@@ -142,13 +143,6 @@ public class PrenominaService {
     private void exigirRevision(PrenominaDAO.Quincena quincena) {
         if (!"REVISION".equals(quincena.estado())) {
             throw new IllegalArgumentException("La operación requiere una quincena en revisión.");
-        }
-    }
-
-    private void exigirRevisor(Usuario actor) {
-        if (actor == null || !"ACTIVO".equals(actor.getEstado())
-                || !("ADMINISTRADOR".equals(actor.getRol()) || "REVISOR".equals(actor.getRol()))) {
-            throw new IllegalArgumentException("La operación requiere un administrador o revisor activo.");
         }
     }
 
@@ -210,32 +204,4 @@ public class PrenominaService {
         }
     }
 
-    private void exigirRol(Usuario actor, String rol) {
-        if (actor == null || !"ACTIVO".equals(actor.getEstado()) || !rol.equals(actor.getRol())) {
-            throw new IllegalArgumentException("La operación requiere un administrador activo.");
-        }
-    }
-
-    @FunctionalInterface
-    private interface Operacion<T> {
-        T realizar(Connection conn) throws SQLException;
-    }
-
-    private <T> T transaccion(Operacion<T> operacion) throws SQLException {
-        try (var conn = DatabaseConnection.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                T resultado = operacion.realizar(conn);
-                conn.commit();
-                return resultado;
-            } catch (SQLException | RuntimeException ex) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollback) {
-                    ex.addSuppressed(rollback);
-                }
-                throw ex;
-            }
-        }
-    }
 }

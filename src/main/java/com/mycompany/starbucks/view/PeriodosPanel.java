@@ -148,6 +148,21 @@ public class PeriodosPanel extends JPanel {
         scrollPeriodos.setBackground(Estilo.SUPERFICIE);
         scrollPeriodos.getViewport().setBackground(Estilo.SUPERFICIE);
         tablePanel.add(scrollPeriodos, BorderLayout.CENTER);
+        var orden = new TableRowSorter<>(tableModelPeriodos);
+        tablePeriodos.setRowSorter(orden);
+        JComboBox<String> estados = new JComboBox<>(new String[]{"Todos", "CAPTURA", "REVISION", "AUTORIZADO"});
+        estados.addActionListener(e -> orden.setRowFilter(estados.getSelectedIndex() == 0 ? null
+                : RowFilter.regexFilter("^" + estados.getSelectedItem() + "$", 4)));
+        JButton detalle = new JButton("Ver detalle");
+        detalle.addActionListener(e -> verDetalle());
+        JButton refrescar = new JButton("Actualizar lista");
+        refrescar.addActionListener(e -> cargarPeriodos());
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        acciones.add(new JLabel("Estado"));
+        acciones.add(estados);
+        acciones.add(detalle);
+        acciones.add(refrescar);
+        tablePanel.add(acciones, BorderLayout.SOUTH);
 
         add(tablePanel, BorderLayout.CENTER);
 
@@ -220,7 +235,20 @@ public class PeriodosPanel extends JPanel {
         }
     }
 
-    private void cargarPeriodos() {
+    private void verDetalle() {
+        int fila = tablePeriodos.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona una quincena.");
+            return;
+        }
+        int i = tablePeriodos.convertRowIndexToModel(fila);
+        String detalle = tableModelPeriodos.getValueAt(i, 1) + "\n"
+                + tableModelPeriodos.getValueAt(i, 2) + " a " + tableModelPeriodos.getValueAt(i, 3) + "\n"
+                + "Estado " + tableModelPeriodos.getValueAt(i, 4);
+        JOptionPane.showMessageDialog(this, detalle, "Detalle de la quincena", JOptionPane.PLAIN_MESSAGE);
+    }
+
+    void cargarPeriodos() {
         try {
             List<PeriodoQuincenal> periodos = periodoService.listarTodos();
             tableModelPeriodos.setRowCount(0);
@@ -258,7 +286,6 @@ public class PeriodosPanel extends JPanel {
             periodo.setEstado("CAPTURA");
 
             periodoService.guardar(mainFrame.getUsuario(), periodo);
-            try { mainFrame.getBitacoraService().registrar(mainFrame.getUsuario().getId(), "ALTA_PERIODO", "periodo_quincenal", periodo.getId(), "Periodo: " + identificador); } catch (SQLException ex) { ex.printStackTrace(); }
 
             cargarPeriodos();
             limpiarFormularioPeriodo();
@@ -274,14 +301,13 @@ public class PeriodosPanel extends JPanel {
         int selectedRow = tablePeriodos.getSelectedRow();
         if (selectedRow < 0) { JOptionPane.showMessageDialog(this, "Seleccione un periodo", "Validacion", JOptionPane.WARNING_MESSAGE); return; }
 
-        int periodoId = (int) tableModelPeriodos.getValueAt(selectedRow, 0);
+        int periodoId = (int) tableModelPeriodos.getValueAt(tablePeriodos.convertRowIndexToModel(selectedRow), 0);
         String identificador = JOptionPane.showInputDialog(this, "Nuevo identificador:", "Actualizar periodo", JOptionPane.QUESTION_MESSAGE);
         if (identificador == null || identificador.trim().isEmpty()) return;
         identificador = identificador.trim();
 
         try {
             periodoService.renombrar(mainFrame.getUsuario(), periodoId, identificador);
-            try { mainFrame.getBitacoraService().registrar(mainFrame.getUsuario().getId(), "MODIFICAR_PERIODO", "periodo_quincenal", periodoId, "Modificacion periodo ID " + periodoId); } catch (SQLException ex) { ex.printStackTrace(); }
 
             cargarPeriodos();
             JOptionPane.showMessageDialog(this, "Periodo actualizado correctamente", "Exito", JOptionPane.INFORMATION_MESSAGE);

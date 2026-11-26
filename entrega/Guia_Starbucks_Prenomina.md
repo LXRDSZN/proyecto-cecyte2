@@ -74,7 +74,7 @@ Abre **Incidencias**, selecciona colaborador, quincena, tipo y fecha. Completa l
 
 En **Reportes**, elige personal, incidencias, descuentos preliminares o revisiones y autorizaciones. Aplica los filtros y pulsa **Consultar**. Usa **Exportar CSV** para guardar la tabla en UTF-8. El módulo está disponible para administradores y revisores. Para terminar, usa **Cerrar sesión** en el encabezado.
 
-Las tres cuentas de esta entrega ya están persistidas en MariaDB. En esta revisión, la pantalla **Usuarios** permite consultar las cuentas. Sus acciones de alta y eliminación todavía son simuladas.
+En **Usuarios**, el administrador puede crear cuentas, editar el nombre o el rol, cambiar contraseñas y activar o desactivar cuentas. La desactivación conserva el historial y el sistema protege al último administrador activo. **Ver bitácora** muestra los cambios registrados.
 
 ## Cómo se desarrolló
 

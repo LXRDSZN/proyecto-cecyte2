@@ -2,6 +2,9 @@ package com.mycompany.starbucks.service;
 
 import com.mycompany.starbucks.model.PeriodoQuincenal;
 import com.mycompany.starbucks.model.Usuario;
+import com.mycompany.starbucks.model.Rol;
+import com.mycompany.starbucks.dao.UsuarioDAO;
+import com.mycompany.starbucks.dao.PrenominaDAO;
 import com.mycompany.starbucks.dao.PeriodoQuincenalDAO;
 import java.sql.SQLException;
 import java.util.List;
@@ -12,8 +15,9 @@ public class PeriodoQuincenalService {
     private final PeriodoQuincenalDAO periodoQuincenalDAO = new PeriodoQuincenalDAO();
 
     public PeriodoQuincenal guardar(Usuario actor, PeriodoQuincenal periodo) throws SQLException {
-        validarAdministrador(actor);
-        synchronized (PeriodoQuincenalService.class) {
+        return OperacionBD.transaccion(conn -> {
+            new UsuarioDAO().bloquearAdministracion(conn);
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR);
             validarIdentificador(periodo.getIdentificador());
             var inicio = periodo.getFechaInicio();
             var fin = periodo.getFechaFin();
@@ -31,8 +35,11 @@ public class PeriodoQuincenalService {
                 }
             }
             periodo.setEstado("CAPTURA");
-            return periodoQuincenalDAO.guardar(periodo);
-        }
+            periodoQuincenalDAO.guardar(conn, periodo);
+            new BitacoraService().registrar(conn, actor.getId(), "ALTA_PERIODO", "periodo_quincenal",
+                    periodo.getId(), periodo.getIdentificador());
+            return periodo;
+        });
     }
 
     public Optional<PeriodoQuincenal> porId(Integer id) throws SQLException {
@@ -44,25 +51,23 @@ public class PeriodoQuincenalService {
     }
 
     public void renombrar(Usuario actor, int id, String identificador) throws SQLException {
-        validarAdministrador(actor);
         validarIdentificador(identificador);
-        var periodo = porId(id).orElseThrow(() -> new IllegalArgumentException("El periodo ya no existe."));
-        if (!"CAPTURA".equals(periodo.getEstado())) {
-            throw new IllegalArgumentException("Solo se pueden editar periodos en captura.");
-        }
-        if (periodo.getIdentificador().equals(identificador)) {
-            return;
-        }
-        if (identificadorExiste(identificador)) {
-            throw new IllegalArgumentException("Ya existe un periodo con ese identificador.");
-        }
-        periodoQuincenalDAO.renombrar(id, identificador);
-    }
-
-    private void validarAdministrador(Usuario actor) {
-        if (actor == null || !"ACTIVO".equals(actor.getEstado()) || !"ADMINISTRADOR".equals(actor.getRol())) {
-            throw new IllegalArgumentException("Solo un administrador activo puede gestionar periodos.");
-        }
+        OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR);
+            var quincena = new PrenominaDAO().bloquearPeriodo(conn, id);
+            if (!"CAPTURA".equals(quincena.estado())) {
+                throw new IllegalArgumentException("Solo se pueden editar periodos en captura.");
+            }
+            var periodo = porId(id).orElseThrow(() -> new IllegalArgumentException("El periodo ya no existe."));
+            if (periodo.getIdentificador().equals(identificador)) return null;
+            if (identificadorExiste(identificador)) {
+                throw new IllegalArgumentException("Ya existe un periodo con ese identificador.");
+            }
+            periodoQuincenalDAO.renombrar(conn, id, identificador);
+            new BitacoraService().registrar(conn, actor.getId(), "MODIFICAR_PERIODO", "periodo_quincenal",
+                    id, periodo.getIdentificador() + " → " + identificador);
+            return null;
+        });
     }
 
     private void validarIdentificador(String identificador) {

@@ -125,7 +125,7 @@ public class PersonalPanel extends JPanel {
 
     }
 
-    private void cargarColaboradores() {
+    void cargarColaboradores() {
         try {
             List<Colaborador> colaboradores = colaboradorService.listarTodos();
             tableModel.setRowCount(0);
@@ -169,14 +169,6 @@ public class PersonalPanel extends JPanel {
                 colaboradorService.guardar(actor, colaborador);
             } else {
                 colaboradorService.actualizar(actor, colaborador);
-            }
-            try {
-                mainFrame.getBitacoraService().registrar(actor.getId(),
-                        alta ? "ALTA_COLABORADOR" : "MODIFICAR_COLABORADOR", "colaborador",
-                        colaborador.getId(), "Empleado " + colaborador.getNumeroEmpleado()
-                                + " con estado " + colaborador.getEstado());
-            } catch (SQLException ex) {
-                System.err.println("Error al registrar bitácora: " + ex.getMessage());
             }
             cargarColaboradores();
             limpiarFormulario();

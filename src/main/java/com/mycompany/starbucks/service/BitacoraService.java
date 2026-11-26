@@ -31,13 +31,19 @@ public class BitacoraService {
      */
     public void registrar(int usuarioId, String accion, String entidad, int identificador,
                           String informacionRelevante) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            registrar(connection, usuarioId, accion, entidad, identificador, informacionRelevante);
+        }
+    }
+
+    void registrar(Connection connection, int usuarioId, String accion, String entidad, int identificador,
+                   String informacionRelevante) throws SQLException {
         String sql = """
                 INSERT INTO bitacora_cambios (usuario_id, accion, entidad, identificador, fecha_hora, informacion_relevante)
                 VALUES (?, ?, ?, ?, NOW(), ?)
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, usuarioId);
             statement.setString(2, accion);

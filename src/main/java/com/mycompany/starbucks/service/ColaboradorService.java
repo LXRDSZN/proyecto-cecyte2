@@ -2,6 +2,7 @@ package com.mycompany.starbucks.service;
 
 import com.mycompany.starbucks.model.Colaborador;
 import com.mycompany.starbucks.model.Usuario;
+import com.mycompany.starbucks.model.Rol;
 import com.mycompany.starbucks.dao.ColaboradorDAO;
 import java.sql.SQLException;
 import java.util.List;
@@ -12,8 +13,14 @@ public class ColaboradorService {
     private final ColaboradorDAO colaboradorDAO = new ColaboradorDAO();
 
     public Colaborador guardar(Usuario actor, Colaborador colaborador) throws SQLException {
-        validarCaptura(actor, colaborador);
-        return colaboradorDAO.guardar(colaborador);
+        return OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR, Rol.CAPTURISTA);
+            validarCaptura(colaborador);
+            colaboradorDAO.guardar(conn, colaborador);
+            new BitacoraService().registrar(conn, actor.getId(), "ALTA_COLABORADOR", "colaborador",
+                    colaborador.getId(), colaborador.getNumeroEmpleado() + " · " + colaborador.getEstado());
+            return colaborador;
+        });
     }
 
     public Optional<Colaborador> porId(Integer id) throws SQLException {
@@ -33,15 +40,20 @@ public class ColaboradorService {
     }
 
     public Colaborador actualizar(Usuario actor, Colaborador colaborador) throws SQLException {
-        validarCaptura(actor, colaborador);
-        return colaboradorDAO.actualizar(colaborador);
+        return OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR, Rol.CAPTURISTA);
+            validarCaptura(colaborador);
+            if (colaborador.getId() == null || colaboradorDAO.porId(colaborador.getId()).isEmpty()) {
+                throw new IllegalArgumentException("El colaborador ya no existe.");
+            }
+            colaboradorDAO.actualizar(conn, colaborador);
+            new BitacoraService().registrar(conn, actor.getId(), "MODIFICAR_COLABORADOR", "colaborador",
+                    colaborador.getId(), colaborador.getNumeroEmpleado() + " · " + colaborador.getEstado());
+            return colaborador;
+        });
     }
 
-    private void validarCaptura(Usuario actor, Colaborador colaborador) throws SQLException {
-        if (actor == null || !"ACTIVO".equals(actor.getEstado())
-                || !("ADMINISTRADOR".equals(actor.getRol()) || "CAPTURISTA".equals(actor.getRol()))) {
-            throw new IllegalArgumentException("Tu rol solo permite consultar colaboradores.");
-        }
+    private void validarCaptura(Colaborador colaborador) throws SQLException {
         String numero = colaborador.getNumeroEmpleado();
         String nombre = colaborador.getNombreCompleto();
         Double salario = colaborador.getSalarioDiario();

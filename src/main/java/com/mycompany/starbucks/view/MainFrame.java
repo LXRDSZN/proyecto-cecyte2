@@ -43,6 +43,9 @@ public class MainFrame extends JFrame {
     private IncidenciasPanel incidenciasPanel;
     private PrenominaPanel prenominaPanel;
     private ReportesPanel reportesPanel;
+    private UsuariosPanel usuariosPanel;
+    private PeriodosPanel periodosPanel;
+    private PersonalPanel personalPanel;
 
     // Botones del sidebar
 
@@ -77,10 +80,6 @@ public class MainFrame extends JFrame {
         return authService;
     }
 
-    public BitacoraService getBitacoraService() {
-        return bitacoraService;
-    }
-
     public UsuarioService getUsuarioService() {
         return usuarioService;
     }
@@ -103,8 +102,10 @@ public class MainFrame extends JFrame {
 
         dashboardPanel = new DashboardPanel(this);
         centerPanel.add(dashboardPanel, "inicio");
-        centerPanel.add(new PersonalPanel(this), "personal");
-        centerPanel.add(new PeriodosPanel(this), "periodos");
+        personalPanel = new PersonalPanel(this);
+        periodosPanel = new PeriodosPanel(this);
+        centerPanel.add(personalPanel, "personal");
+        centerPanel.add(periodosPanel, "periodos");
         incidenciasPanel = new IncidenciasPanel(this);
         centerPanel.add(incidenciasPanel, "incidencias");
         prenominaPanel = new PrenominaPanel(this);
@@ -112,7 +113,8 @@ public class MainFrame extends JFrame {
         reportesPanel = new ReportesPanel(this);
         centerPanel.add(reportesPanel, "reportes");
         if ("ADMINISTRADOR".equals(usuario.getRol())) {
-            centerPanel.add(new UsuariosPanel(this), "usuarios");
+            usuariosPanel = new UsuariosPanel(this);
+            centerPanel.add(usuariosPanel, "usuarios");
         }
         dashboardPanel.actualizar();
     }
@@ -160,13 +162,13 @@ public class MainFrame extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(3, 0, 3, 0);
         agregarOpcion(menu, gbc, "Inicio", "inicio", true, () -> dashboardPanel.actualizar()).setSelected(true);
-        agregarOpcion(menu, gbc, "Personal", "personal", true, () -> {});
-        agregarOpcion(menu, gbc, "Periodos", "periodos", true, () -> {});
+        agregarOpcion(menu, gbc, "Personal", "personal", true, () -> personalPanel.cargarColaboradores());
+        agregarOpcion(menu, gbc, "Periodos", "periodos", true, () -> periodosPanel.cargarPeriodos());
         agregarOpcion(menu, gbc, "Incidencias", "incidencias", true, () -> incidenciasPanel.actualizar());
         agregarOpcion(menu, gbc, "Pre-nómina", "prenomina", true, () -> prenominaPanel.actualizar());
         agregarOpcion(menu, gbc, "Reportes", "reportes", administrador || "REVISOR".equals(usuario.getRol()),
                 () -> reportesPanel.actualizar());
-        agregarOpcion(menu, gbc, "Usuarios", "usuarios", administrador, () -> {});
+        agregarOpcion(menu, gbc, "Usuarios", "usuarios", administrador, () -> usuariosPanel.actualizar());
         gbc.weighty = 1;
         menu.add(Box.createVerticalGlue(), gbc);
         return menu;
@@ -217,8 +219,8 @@ public class MainFrame extends JFrame {
 
             // Cerrar ventana actual y volver al login
             LoginFrame loginFrame = new LoginFrame(authService);
-            loginFrame.setVisible(true);
             dispose();
+            loginFrame.setVisible(true);
         }
     }
 }

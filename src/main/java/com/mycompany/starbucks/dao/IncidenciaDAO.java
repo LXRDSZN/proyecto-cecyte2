@@ -84,9 +84,8 @@ public class IncidenciaDAO {
             UPDATE incidencias SET estado = 'CANCELADA' WHERE id = ?
             """;
 
-    public Incidencia guardar(Incidencia incidencia) throws SQLException {
-        try (Connection connection = com.mycompany.starbucks.config.DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT, PreparedStatement.RETURN_GENERATED_KEYS)) {
+    public Incidencia guardar(Connection connection, Incidencia incidencia) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(INSERT, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
             statement.setInt(1, incidencia.getColaborador().getId());
             statement.setString(2, incidencia.getTipo().name());
@@ -175,9 +174,8 @@ public class IncidenciaDAO {
         return incidencias;
     }
 
-    public Incidencia actualizar(Incidencia incidencia) throws SQLException {
-        try (Connection connection = com.mycompany.starbucks.config.DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE)) {
+    public Incidencia actualizar(Connection connection, Incidencia incidencia) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(UPDATE)) {
 
             statement.setInt(1, incidencia.getColaborador().getId());
             statement.setInt(2, incidencia.getPeriodo().getId());

@@ -35,9 +35,8 @@ public class PeriodoQuincenalDAO {
             SELECT id FROM periodos_quincenales WHERE identificador = ?
             """;
 
-    public PeriodoQuincenal guardar(PeriodoQuincenal periodo) throws SQLException {
-        try (Connection connection = com.mycompany.starbucks.config.DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT, PreparedStatement.RETURN_GENERATED_KEYS)) {
+    public PeriodoQuincenal guardar(Connection connection, PeriodoQuincenal periodo) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(INSERT, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, periodo.getIdentificador());
             statement.setDate(2, java.sql.Date.valueOf(periodo.getFechaInicio()));
@@ -84,9 +83,8 @@ public class PeriodoQuincenalDAO {
         return periodos;
     }
 
-    public void renombrar(int id, String identificador) throws SQLException {
-        try (Connection connection = com.mycompany.starbucks.config.DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE)) {
+    public void renombrar(Connection connection, int id, String identificador) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(UPDATE)) {
             statement.setString(1, identificador);
             statement.setInt(2, id);
             if (statement.executeUpdate() != 1) {

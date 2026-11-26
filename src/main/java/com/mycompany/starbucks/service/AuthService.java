@@ -49,7 +49,6 @@ public class AuthService {
                         Usuario user = new Usuario();
                         user.setId(resultSet.getInt("id"));
                         user.setUsuario(resultSet.getString("usuario"));
-                        user.setPassword(password);
                         user.setRol(rolNombre != null ? rolNombre : "CAPTURISTA");
                         user.setEstado(resultSet.getString("estado"));
                         return Optional.of(user);
@@ -100,7 +99,6 @@ public class AuthService {
                     Usuario user = new Usuario();
                     user.setId(resultSet.getInt("id"));
                     user.setUsuario(resultSet.getString("usuario"));
-                    user.setPassword(resultSet.getString("password"));
                     user.setRol(resultSet.getString("rol_nombre"));
                     user.setEstado(resultSet.getString("estado"));
                     return Optional.of(user);

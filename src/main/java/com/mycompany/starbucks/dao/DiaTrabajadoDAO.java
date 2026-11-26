@@ -1,6 +1,7 @@
 package com.mycompany.starbucks.dao;
 
 import com.mycompany.starbucks.config.DatabaseConnection;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.OptionalInt;
 
@@ -19,9 +20,8 @@ public class DiaTrabajadoDAO {
         }
     }
 
-    public void guardar(int periodo, int colaborador, int dias) throws SQLException {
-        try (var conn = DatabaseConnection.getConnection();
-             var stmt = conn.prepareStatement("""
+    public int guardar(Connection conn, int periodo, int colaborador, int dias) throws SQLException {
+        try (var stmt = conn.prepareStatement("""
                      INSERT INTO dias_trabajados (periodo_id, colaborador_id, dias_trabajados)
                      SELECT p.id, c.id, ? FROM periodos_quincenales p
                      JOIN colaboradores c ON c.id = ?
@@ -31,8 +31,16 @@ public class DiaTrabajadoDAO {
             stmt.setInt(1, dias);
             stmt.setInt(2, colaborador);
             stmt.setInt(3, periodo);
-            if (stmt.executeUpdate() == 0 && consultar(periodo, colaborador).orElse(-1) != dias) {
-                throw new IllegalArgumentException("El periodo dejó de estar en captura o el colaborador ya no existe.");
+            stmt.executeUpdate();
+        }
+        try (var stmt = conn.prepareStatement("""
+                SELECT id FROM dias_trabajados WHERE periodo_id = ? AND colaborador_id = ?
+                """)) {
+            stmt.setInt(1, periodo);
+            stmt.setInt(2, colaborador);
+            try (var fila = stmt.executeQuery()) {
+                if (!fila.next()) throw new IllegalArgumentException("El colaborador ya no existe.");
+                return fila.getInt(1);
             }
         }
     }

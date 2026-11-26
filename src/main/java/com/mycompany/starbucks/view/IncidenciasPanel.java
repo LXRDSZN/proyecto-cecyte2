@@ -527,7 +527,6 @@ public class IncidenciasPanel extends JPanel {
             if (tipo == TipoIncidencia.PERMISO) incidencia.setTratamiento(txtTratamiento.getText().trim());
             if (tipo == TipoIncidencia.INCAPACIDAD) incidencia.setReferenciaDocumental(txtReferencia.getText().trim());
             incidenciaService.guardar(mainFrame.getUsuario(), incidencia);
-            try { mainFrame.getBitacoraService().registrar(mainFrame.getUsuario().getId(), incidenciaEnEdicion == null ? "ALTA_INCIDENCIA" : "MODIFICAR_INCIDENCIA", "incidencia", incidencia.getId(), "Incidencia: " + tipo + " para " + colaborador.getNombreCompleto()); } catch (SQLException ex) { ex.printStackTrace(); }
             aplicarFiltros();
             limpiarFormularioIncidencia();
             JOptionPane.showMessageDialog(this, "Incidencia guardada correctamente", "Exito", JOptionPane.INFORMATION_MESSAGE);

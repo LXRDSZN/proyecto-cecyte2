@@ -46,9 +46,8 @@ public class ColaboradorDAO {
             FROM colaboradores WHERE nombre_completo LIKE ? AND estado = 'ACTIVO'
             """;
 
-    public Colaborador guardar(Colaborador colaborador) throws SQLException {
-        try (Connection connection = com.mycompany.starbucks.config.DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT, PreparedStatement.RETURN_GENERATED_KEYS)) {
+    public Colaborador guardar(Connection connection, Colaborador colaborador) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(INSERT, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, colaborador.getNumeroEmpleado());
             statement.setString(2, colaborador.getNombreCompleto());
@@ -95,9 +94,8 @@ public class ColaboradorDAO {
         return colaboradores;
     }
 
-    public Colaborador actualizar(Colaborador colaborador) throws SQLException {
-        try (Connection connection = com.mycompany.starbucks.config.DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE)) {
+    public Colaborador actualizar(Connection connection, Colaborador colaborador) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(UPDATE)) {
 
             statement.setString(1, colaborador.getNumeroEmpleado());
             statement.setString(2, colaborador.getNombreCompleto());

@@ -161,6 +161,15 @@ public class PrenominaDAO {
             detalles.setInt(2, periodo);
             detalles.executeUpdate();
         }
+        if ("REVISION".equals(estado)) return;
+        try (var incidencias = conn.prepareStatement("""
+                UPDATE incidencias SET estado = ? WHERE periodo_id = ?
+                AND (estado IS NULL OR estado <> 'CANCELADA')
+                """)) {
+            incidencias.setString(1, "CAPTURA".equals(estado) ? "PENDIENTE" : estado);
+            incidencias.setInt(2, periodo);
+            incidencias.executeUpdate();
+        }
     }
 
     public void registrarRevision(Connection conn, int periodo, int actor, String estado, String nota)

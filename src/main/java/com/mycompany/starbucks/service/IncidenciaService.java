@@ -3,6 +3,8 @@ package com.mycompany.starbucks.service;
 import com.mycompany.starbucks.dao.IncidenciaDAO;
 import com.mycompany.starbucks.model.Incidencia;
 import com.mycompany.starbucks.model.Usuario;
+import com.mycompany.starbucks.model.Rol;
+import com.mycompany.starbucks.dao.PrenominaDAO;
 import com.mycompany.starbucks.model.Colaborador;
 import com.mycompany.starbucks.model.PeriodoQuincenal;
 import com.mycompany.starbucks.model.TipoIncidencia;
@@ -15,19 +17,16 @@ public class IncidenciaService {
     private final IncidenciaDAO incidenciaDAO = new IncidenciaDAO();
 
     public Incidencia guardar(Usuario actor, Incidencia incidencia) throws SQLException {
-        synchronized (IncidenciaService.class) {
-            if (actor == null || !"ACTIVO".equals(actor.getEstado())
-                    || !("ADMINISTRADOR".equals(actor.getRol()) || "CAPTURISTA".equals(actor.getRol()))) {
-                throw new IllegalArgumentException("Tu rol solo permite consultar incidencias.");
-            }
+        return OperacionBD.transaccion(conn -> {
+            OperacionBD.exigirRol(conn, actor, Rol.ADMINISTRADOR, Rol.CAPTURISTA);
             if (incidencia.getColaborador() == null || incidencia.getColaborador().getId() == null
                     || incidencia.getPeriodo() == null || incidencia.getPeriodo().getId() == null
                     || incidencia.getTipo() == null || incidencia.getFecha() == null) {
                 throw new IllegalArgumentException("Selecciona colaborador, periodo, tipo y fecha.");
             }
-            var periodo = new PeriodoQuincenalService().porId(incidencia.getPeriodo().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("El periodo no existe."));
-            if (!"CAPTURA".equals(periodo.getEstado())) {
+            int periodo = incidencia.getPeriodo().getId();
+            var quincena = new PrenominaDAO().bloquearPeriodo(conn, periodo);
+            if (!"CAPTURA".equals(quincena.estado())) {
                 throw new IllegalArgumentException("Solo se permiten cambios en periodos en captura.");
             }
             if (new ColaboradorService().porId(incidencia.getColaborador().getId()).isEmpty()) {
@@ -35,7 +34,7 @@ public class IncidenciaService {
             }
             var inicio = incidencia.getFecha();
             var fin = incidencia.fechaFinalEfectiva();
-            if (inicio.isBefore(periodo.getFechaInicio()) || fin.isAfter(periodo.getFechaFin())
+            if (inicio.isBefore(quincena.inicio()) || fin.isAfter(quincena.fin())
                     || fin.isBefore(inicio)) {
                 throw new IllegalArgumentException("El rango debe estar ordenado y dentro de la quincena.");
             }
@@ -44,12 +43,12 @@ public class IncidenciaService {
                 var anterior = porId(incidencia.getId())
                         .orElseThrow(() -> new IllegalArgumentException("La incidencia no existe."));
                 if (!"PENDIENTE".equals(anterior.getEstado())
-                        || !periodo.getId().equals(anterior.getPeriodo().getId())) {
+                        || !java.util.Objects.equals(periodo, anterior.getPeriodo().getId())) {
                     throw new IllegalArgumentException("Solo se pueden editar incidencias pendientes dentro del periodo original.");
                 }
             }
             for (Incidencia existente : porColaborador(incidencia.getColaborador())) {
-                if (!periodo.getId().equals(existente.getPeriodo().getId())
+                if (!java.util.Objects.equals(periodo, existente.getPeriodo().getId())
                         || existente.getFecha() == null || existente.getTipo() == null
                         || existente.getId().equals(incidencia.getId()) || "CANCELADA".equals(existente.getEstado())
                         || inicio.isAfter(existente.fechaFinalEfectiva()) || fin.isBefore(existente.getFecha())) {
@@ -61,8 +60,13 @@ public class IncidenciaService {
                 }
             }
             incidencia.setEstado("PENDIENTE");
-            return incidencia.getId() == null ? incidenciaDAO.guardar(incidencia) : incidenciaDAO.actualizar(incidencia);
-        }
+            boolean alta = incidencia.getId() == null;
+            if (alta) incidenciaDAO.guardar(conn, incidencia);
+            else incidenciaDAO.actualizar(conn, incidencia);
+            new BitacoraService().registrar(conn, actor.getId(), alta ? "ALTA_INCIDENCIA" : "MODIFICAR_INCIDENCIA",
+                    "incidencia", incidencia.getId(), incidencia.getTipo() + " · " + inicio + " a " + fin);
+            return incidencia;
+        });
     }
 
     private void validarDatosEspecificos(Incidencia incidencia) {
