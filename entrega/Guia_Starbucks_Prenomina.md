@@ -1,6 +1,6 @@
 # Guía de uso y desarrollo de STARBUCKS Pre-nómina
 
-STARBUCKS Pre-nómina es una aplicación de escritorio para concentrar personal, días trabajados e incidencias por quincena. El flujo termina con la revisión, la autorización y los reportes de descuentos preliminares. La entrega incluye una copia de MariaDB con cuentas iniciales y datos académicos ficticios.
+STARBUCKS Pre-nómina es una aplicación de escritorio para concentrar personal, días trabajados e incidencias por quincena. El flujo termina con la revisión, la autorización y los reportes de descuentos preliminares. La entrega incluye una copia de MariaDB con las tres cuentas iniciales. La captura de personal, quincenas e incidencias comienza vacía.
 
 ## Instalación en Windows
 
@@ -87,7 +87,7 @@ El proyecto usa **Java Swing y SwingWorker** para la interfaz, **FlatLaf** para 
 | Dominio | `model/` | Colaboradores, quincenas, roles, incidencias y resultados |
 | Reglas de negocio | `service/` | Permisos, validación, cálculo con `BigDecimal` y transiciones del periodo |
 | Persistencia | `dao/` | Consultas parametrizadas y operaciones de MariaDB |
-| Recursos SQL | `src/main/resources/sql/` | Esquema de instalación y datos ficticios opcionales |
+| Recursos SQL | `src/main/resources/sql/` | Esquema de instalación y catálogos de roles e incidencias |
 | Respaldo instalable | `entrega/` | Copia del esquema con registros y cuentas iniciales |
 
 El desarrollo comenzó con la recuperación de la compilación y la conexión JDBC. Después se integraron Personal y Periodos, la captura de días e incidencias, el cálculo preliminar, la revisión, la autorización y los reportes. El cálculo guarda los resultados y la bitácora dentro de una transacción, con reversión si falla la escritura. La migración se verificó restaurando el respaldo en un esquema separado de MariaDB y autenticando las tres cuentas con los roles esperados. La ejecución en Windows queda por validar en el equipo de destino.

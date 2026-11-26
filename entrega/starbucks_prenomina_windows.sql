@@ -81,13 +81,6 @@ CREATE TABLE `colaboradores` (
 
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 /*!40000 ALTER TABLE `colaboradores` DISABLE KEYS */;
-INSERT INTO `colaboradores` VALUES
-(1,'DEMO-001','Valeria Montes',380.50,'ACTIVO'),
-(2,'DEMO-002','Emilio Cruz',345.00,'ACTIVO'),
-(3,'DEMO-003','Lucía Reyes',412.75,'ACTIVO'),
-(4,'DEMO-004','Daniel Ortega',365.00,'ACTIVO'),
-(5,'DEMO-005','Sofía Luna',390.25,'ACTIVO'),
-(6,'DEMO-006','Mateo Ríos',350.00,'INACTIVO');
 /*!40000 ALTER TABLE `colaboradores` ENABLE KEYS */;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -149,12 +142,6 @@ CREATE TABLE `dias_trabajados` (
 
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 /*!40000 ALTER TABLE `dias_trabajados` DISABLE KEYS */;
-INSERT INTO `dias_trabajados` VALUES
-(1,1,1,14),
-(2,2,1,15),
-(3,3,1,14),
-(4,4,1,13),
-(5,5,1,13);
 /*!40000 ALTER TABLE `dias_trabajados` ENABLE KEYS */;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -195,12 +182,6 @@ CREATE TABLE `incidencias` (
 
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 /*!40000 ALTER TABLE `incidencias` DISABLE KEYS */;
-INSERT INTO `incidencias` VALUES
-(1,1,1,1,'2026-11-18','Falta registrada para el ejercicio','PENDIENTE',NULL,NULL,NULL,NULL,NULL,NULL),
-(2,5,1,5,'2026-11-26','Referencia académica','PENDIENTE','2026-11-27',NULL,'General',NULL,NULL,'DEMO-INC-01'),
-(3,3,1,3,'2026-11-22','Solicitud ficticia','PENDIENTE',NULL,NULL,'Personal',1,'Pendiente de revisión',NULL),
-(4,2,1,2,'2026-11-20','Registro de entrada','PENDIENTE',NULL,12,NULL,NULL,NULL,NULL),
-(5,4,1,4,'2026-11-24','Periodo solicitado y aprobado','PENDIENTE','2026-11-25',NULL,NULL,1,NULL,NULL);
 /*!40000 ALTER TABLE `incidencias` ENABLE KEYS */;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -228,8 +209,6 @@ CREATE TABLE `periodos_quincenales` (
 
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 /*!40000 ALTER TABLE `periodos_quincenales` DISABLE KEYS */;
-INSERT INTO `periodos_quincenales` VALUES
-(1,'DEMO-2026-11-2','2026-11-16','2026-11-30','CAPTURA');
 /*!40000 ALTER TABLE `periodos_quincenales` ENABLE KEYS */;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -401,4 +380,4 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-11-26 15:08:00
+-- Dump completed on 2026-11-26 15:32:23
